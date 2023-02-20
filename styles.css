@@ -1,0 +1,24 @@
+#leftcol {
+	background-color: darkgray;
+	width:25%;
+}
+
+#rightcol {
+	background-color: darkgray;
+	width:25%;
+	display:block;
+}
+
+#centercol {
+	background-color: lightgray;
+}
+
+.col {
+	display: flex;
+	flex-wrap: nowrap;
+}
+
+.row {
+	display: flex;
+	justify-content: center;
+}
