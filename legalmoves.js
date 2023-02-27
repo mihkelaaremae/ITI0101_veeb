@@ -22,7 +22,7 @@ class LogicBoard
 		this.blacktime_ms = 0;
 		this.activetimer = -1;
 		this.timecontrol_addms = 1000;
-		this.timecontrol_initialms = 10000 * 60 / 50;
+		this.timecontrol_initialms = 10000 * 60;
 		this.lastheartbeat = null;
 	}
 

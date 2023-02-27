@@ -58,6 +58,8 @@ canvas {
 }
 
 .menuin {
+	display: block;
+	margin: auto;
 	color: white;
 	background: black;
 }

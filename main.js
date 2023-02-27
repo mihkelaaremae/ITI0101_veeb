@@ -9,6 +9,12 @@ const d_hostoptions = document.getElementById("d_hostoptions");
 const d_joinoptions = document.getElementById("d_joinoptions");
 const d_working = document.getElementById("d_working");
 const in_code = document.getElementById("in_code");
+const in_local_time_inital = document.getElementById("in_local_time_inital");
+const in_local_time_increment = document.getElementById("in_local_time_increment");
+const in_bot_time_inital = document.getElementById("in_bot_time_inital");
+const in_bot_time_increment = document.getElementById("in_bot_time_increment");
+const in_host_time_inital = document.getElementById("in_host_time_inital");
+const in_host_time_increment = document.getElementById("in_host_time_increment");
 const btn_join = document.getElementById("btn_join");
 const h1_title = document.getElementById("h1_title");
 
@@ -163,12 +169,31 @@ function format_time(ms)
 {
 	if (ms > 1000*60*60)
 	{
-		return tring(Math.floor(ms/1000/60/60)).padStart(2, '0') + ":" + String(Math.floor(ms/1000/60) % 60).padStart(2, '0') + ":" + String(Math.floor(ms/1000) % 60).padStart(2, '0');
+		return String(Math.floor(ms/1000/60/60)).padStart(2, '0') + ":" + String(Math.floor(ms/1000/60) % 60).padStart(2, '0') + ":" + String(Math.floor(ms/1000) % 60).padStart(2, '0');
 	}
 	else
 	{
 		return String(Math.floor(ms/1000/60) % 60).padStart(2, '0') + ":" + String(Math.floor(ms/1000) % 60).padStart(2, '0');
 	}
+}
+
+function parse_time(string)
+{
+	const words = string.split(":").reverse();
+	var ms = 0;
+	if (words.length >= 1)
+	{
+		ms += 1000*Number(words[0]);
+	}
+	if (words.length >= 2)
+	{
+		ms += 1000*60*Number(words[1]);
+	}
+	if (words.length >= 3)
+	{
+		ms += 1000*60*60*Number(words[2]);
+	}
+	return ms;
 }
 
 class Piece
@@ -331,7 +356,7 @@ class Board
 		}
 		if (gametype == GAMETYPE_HOST)
 		{
-			peer_connections[0].send("move " + this.move_from_x + " " + this.move_from_y + " " + this.move_to_x + " " + this.move_to_y + " " + this.logic.promotion_choice);
+			peer_connections[0].send("move " + this.move_from_x + " " + this.move_from_y + " " + this.move_to_x + " " + this.move_to_y + " " + this.logic.promotion_choice + " " + this.logic.whitetime_ms + " " + this.logic.blacktime_ms);
 		}
 		this.promotion_prompt = false;
 		this.logic.move_piece(this.move_from_x, this.move_from_y, this.move_to_x, this.move_to_y);
@@ -826,18 +851,24 @@ function button_back()
 function button_go_local()
 {
 	menu = MENU_GAMING;
+	board.logic.timecontrol_initialms = parse_time(in_local_time_inital.value);
+	board.logic.timecontrol_addms = parse_time(in_local_time_increment.value);
 	board.reset();
 }
 
 function button_go_bot()
 {
 	menu = MENU_GAMING;
+	board.logic.timecontrol_initialms = parse_time(in_bot_time_inital.value);
+	board.logic.timecontrol_addms = parse_time(in_bot_time_increment.value);
 	board.reset();
 }
 
 function button_go_host()
 {
 	menu = MENU_WORKING;
+	board.logic.timecontrol_initialms = parse_time(in_host_time_inital.value);
+	board.logic.timecontrol_addms = parse_time(in_host_time_increment.value);
 	board.reset();
 	peer_connections = new Array();
 	peer_self_id = make_id();
@@ -883,11 +914,11 @@ function button_go_host()
 					{
 						console.log("CLOSE");
 					});
-					conn.send("connect " + (1-side) + " " + GAMETYPE_JOIN);
+					conn.send("connect " + (1-side) + " " + GAMETYPE_JOIN + " " + board.logic.timecontrol_initialms + " " + board.logic.timecontrol_addms);
 				}
 				else
 				{
-					conn.send("connect " + side + " " + GAMETYPE_JOIN);
+					conn.send("connect " + side + " " + GAMETYPE_JOIN + " " + board.logic.timecontrol_initialms + " " + board.logic.timecontrol_addms);
 				}
 			});
 		});
@@ -915,6 +946,8 @@ function button_go_join()
 				if (words[0] == "connect")
 				{
 					var side = words[1];
+					board.logic.timecontrol_initialms = Number(words[3]);
+					board.logic.timecontrol_addms = Number(words[4]);
 					board.reset();
 					board.facing_side = side;
 					board.disabled_side = 1-side;
@@ -923,6 +956,8 @@ function button_go_join()
 				}
 				else if (words[0] == "move")
 				{
+					board.logic.whitetime_ms = Number(words[6]);
+					board.logic.blacktime_ms = Number(words[7]);
 					board.move_from_x = Number(words[1]);
 					board.move_from_y = Number(words[2]);
 					board.move_to_x = Number(words[3]);
@@ -1019,7 +1054,7 @@ function init_debug()
 	};
 	document.getElementById("rightcol").appendChild(b_flipboard);
 	document.getElementById("rightcol").appendChild(document.createElement("br"));
-	document.getElementById("rightcol").appendChild(b_resetboard);
+	//document.getElementById("rightcol").appendChild(b_resetboard);
 	document.getElementById("rightcol").appendChild(document.createElement("br"));
 }
 
