@@ -2,14 +2,75 @@
 <html>
 	<head>
 		<title>Online male</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 	</head>
 	<link rel="stylesheet" href="styles.css">
 	<body>
 		<div class="row">
-			<div class="col" id="leftcol"></div>
-			<div class="col" id="centercol"></div>
+			<div class="col" id="fillcol">
+				<h1 id="h1_title">mihkelaaremae.github.io</h1>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col" id="leftcol">
+				<div id="div_pgn">
+					<p id="p_pgn">PGN:</p>
+				</div>
+				<hr>
+				<div id="div_fen">
+					<p id="p_fen">FEN:</p>
+				</div>
+			</div>
+			<div class="col" id="centercol">
+				<div class="centerdiv" id="d_mainmenu">
+					<br>
+					<br>
+					<button class="mainmenubutton" onclick="button_playlocal()">Play locally</button>
+					<button class="mainmenubutton" onclick="button_playbot()">Play against a bot</button>
+					<button class="mainmenubutton" onclick="button_host()">Host a game</button>
+					<button class="mainmenubutton" onclick="button_join()">Join a game</button>
+				</div>
+				<div class="centerdiv" id="d_localoptions" hidden>
+					<br>
+					<br>
+					<button class="mainmenubutton" onclick="button_go_local()">Go</button>
+					<button class="mainmenubutton" onclick="button_back()">Back</button>
+				</div>
+				<div class="centerdiv" id="d_botoptions" hidden>
+					<br>
+					<br>
+					<button class="mainmenubutton" onclick="button_go_bot()">Go</button>
+					<button class="mainmenubutton" onclick="button_back()">Back</button>
+				</div>
+				<div class="centerdiv" id="d_hostoptions" hidden>
+					<br>
+					<br>
+					<button class="mainmenubutton" onclick="button_go_host()">Go</button>
+					<button class="mainmenubutton" onclick="button_back()">Back</button>
+				</div>
+				<div class="centerdiv" id="d_joinoptions" hidden>
+					<br>
+					<br>
+					<button class="mainmenubutton" onclick="button_go_join()" id="btn_join" disabled>Go</button>
+					<button class="mainmenubutton" onclick="button_back()">Back</button>
+					<p class="menup">Join code:</p>
+					<input type="text" name="code" class="menuin" id="in_code">
+				</div>
+				<div class="centerdiv" id="d_working" hidden>
+					<br>
+					<br>
+					<p class="menup">Working...</p>
+				</div>
+			</div>
 			<div class="col" id="rightcol"></div>
 		</div>
+		<div class="row">
+			<div class="col" id="fillcol">
+				<p id="p_status"></p>
+			</div>
+		</div>
 	</body>
+	<script type="text/javascript" src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+	<script type="text/javascript" src="legalmoves.js"></script>
 	<script type="text/javascript" src="main.js"></script>
 </html>

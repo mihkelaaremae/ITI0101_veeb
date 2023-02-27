@@ -1,6 +1,11 @@
 #leftcol {
 	background-color: darkgray;
 	width:25%;
+
+	display: flex;
+	flex-wrap: wrap;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 #rightcol {
@@ -9,16 +14,65 @@
 	display:block;
 }
 
+#fillcol {
+	background-color: darkgray;
+	width:100%;
+	display:block;
+}
+
 #centercol {
 	background-color: lightgray;
+	display: grid;
 }
 
 .col {
-	display: flex;
-	flex-wrap: nowrap;
+
 }
 
 .row {
 	display: flex;
 	justify-content: center;
+}
+
+.centerdiv {
+	grid-column: 1;
+	grid-row: 1;
+	background: rgba(0, 0, 0, 0.7);
+	z-index: 5;
+}
+
+canvas {
+	grid-column: 1;
+	grid-row: 1;
+}
+
+.mainmenubutton {
+	display: block;
+	margin: auto;
+	margin-top: 30px;
+	margin-bottom: 30px;
+}
+
+.menup {
+	color: white;
+}
+
+.menuin {
+	color: white;
+	background: black;
+}
+
+p, h1 {
+	white-space: pre-wrap;
+	text-align: center;
+}
+
+#p_pgn {
+	text-align: left;
+	font-family: monospace;
+}
+
+#p_fen {
+	overflow-wrap: anywhere;
+	font-family: monospace;
 }
