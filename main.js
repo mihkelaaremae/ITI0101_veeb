@@ -8,6 +8,7 @@ const d_botoptions = document.getElementById("d_botoptions");
 const d_hostoptions = document.getElementById("d_hostoptions");
 const d_joinoptions = document.getElementById("d_joinoptions");
 const d_working = document.getElementById("d_working");
+const d_waitopponent = document.getElementById("d_waitopponent");
 const in_code = document.getElementById("in_code");
 const in_local_time_inital = document.getElementById("in_local_time_inital");
 const in_local_time_increment = document.getElementById("in_local_time_increment");
@@ -17,6 +18,7 @@ const in_host_time_inital = document.getElementById("in_host_time_inital");
 const in_host_time_increment = document.getElementById("in_host_time_increment");
 const btn_join = document.getElementById("btn_join");
 const h1_title = document.getElementById("h1_title");
+const p_joincode = document.getElementById("p_joincode");
 
 const board_darkcolor = "#501010";
 const board_lightcolor = "#c0c0e0";
@@ -27,6 +29,14 @@ const board_promote_triangle = 15;
 const board_promote_margin = 5;
 
 const board_promotionalpha = 0.6;
+
+var last_win_width = 0;
+var last_win_height = 0;
+
+var ideal_board_width = 512;
+var ideal_board_height = 512;
+var ideal_board_offx = 50;
+var ideal_board_offy = 100;
 
 var board_width = 512;
 var board_height = 512;
@@ -116,6 +126,7 @@ const MENU_BOTOPTIONS = 3;
 const MENU_HOSTOPTIONS = 4;
 const MENU_JOINOPTIONS = 5;
 const MENU_WORKING = 6;
+const MENU_WAITOPPONENT = 7;
 
 var menu = MENU_MAINMENU;
 
@@ -343,8 +354,8 @@ class Board
 			this.gameend();
 		}
 		p_status.innerHTML = GAMESTAT_DESC[this.logic.side_to_move];
-		p_pgn.innerHTML = "PGN:\n" + this.logic.pgn;
-		p_fen.innerHTML = "FEN:\n" + this.logic.get_fen();
+		//p_pgn.innerHTML = "PGN:\n" + this.logic.pgn;
+		//p_fen.innerHTML = "FEN:\n" + this.logic.get_fen();
 		this.reconstruct();
 	}
 
@@ -688,7 +699,14 @@ class Board
 
 function canvas_on_mouse_down(e)
 {
-	if (e.button != 0)
+	console.log(e);
+	const rect = board_canvas.getBoundingClientRect();
+	if (e.type == "touchstart")
+	{
+		mouse_x = e.changedTouches[0].clientX - rect.left;
+		mouse_y = e.changedTouches[0].clientY - rect.top;
+	}
+	if (e.type == "mousedown" && e.button != 0)
 	{
 		return;
 	}
@@ -705,22 +723,35 @@ function canvas_on_mouse_down(e)
 		return;
 	}
 	mouse_button = true;
+	console.log(mouse_x + " " + mouse_y);
 	if (board.grab_piece(mouse_x, mouse_y))
 	{
-		e.preventDefault();
+		if (e.type == "mousedown")
+		{
+			e.preventDefault();
+		}
 	}
 }
 
 function canvas_on_mouse_move(e)
 {
-	var rect = board_canvas.getBoundingClientRect();
-	mouse_x = e.clientX - rect.left,
-	mouse_y = e.clientY - rect.top
+	const rect = board_canvas.getBoundingClientRect();
+	//console.log(e);
+	if (e.type == "touchmove")
+	{
+		mouse_x = e.changedTouches[0].clientX - rect.left;
+		mouse_y = e.changedTouches[0].clientY - rect.top;
+	}
+	else
+	{
+		mouse_x = e.clientX - rect.left;
+		mouse_y = e.clientY - rect.top;
+	}
 }
 
 function canvas_on_mouse_up(e)
 {
-	if (e.button != 0)
+	if (e.type == "mouseup" && e.button != 0)
 	{
 		return;
 	}
@@ -751,6 +782,7 @@ function switchmenu()
 		d_hostoptions.hidden = true;
 		d_joinoptions.hidden = true;
 		d_working.hidden = true;
+		d_waitopponent.hidden = true;
 		break;
 
 	case MENU_MAINMENU:
@@ -760,6 +792,7 @@ function switchmenu()
 		d_hostoptions.hidden = true;
 		d_joinoptions.hidden = true;
 		d_working.hidden = true;
+		d_waitopponent.hidden = true;
 		h1_title.innerHTML = window.location.host;
 		break;
 
@@ -769,6 +802,7 @@ function switchmenu()
 		d_botoptions.hidden = true;
 		d_hostoptions.hidden = true;
 		d_joinoptions.hidden = true;
+		d_waitopponent.hidden = true;
 		d_working.hidden = true;
 		break;
 
@@ -778,6 +812,7 @@ function switchmenu()
 		d_botoptions.hidden = false;
 		d_hostoptions.hidden = true;
 		d_joinoptions.hidden = true;
+		d_waitopponent.hidden = true;
 		d_working.hidden = true;
 		break;
 
@@ -787,6 +822,7 @@ function switchmenu()
 		d_botoptions.hidden = true;
 		d_hostoptions.hidden = false;
 		d_joinoptions.hidden = true;
+		d_waitopponent.hidden = true;
 		d_working.hidden = true;
 		break;
 
@@ -796,6 +832,7 @@ function switchmenu()
 		d_botoptions.hidden = true;
 		d_hostoptions.hidden = true;
 		d_joinoptions.hidden = false;
+		d_waitopponent.hidden = true;
 		d_working.hidden = true;
 		btn_join.disabled = !check_id(in_code.value);
 		break;
@@ -806,13 +843,25 @@ function switchmenu()
 		d_botoptions.hidden = true;
 		d_hostoptions.hidden = true;
 		d_joinoptions.hidden = true;
+		d_waitopponent.hidden = true;
 		d_working.hidden = false;
+		break;
+
+	case MENU_WAITOPPONENT:
+		d_mainmenu.hidden = true;
+		d_localoptions.hidden = true;
+		d_botoptions.hidden = true;
+		d_hostoptions.hidden = true;
+		d_joinoptions.hidden = true;
+		d_waitopponent.hidden = false;
+		d_working.hidden = true;
 		break;
 	}
 }
 
 function draw()
 {
+	scale_canvas();
 	switchmenu();
 	board_ctx.clearRect(0, 0, board_canvas.width, board_canvas.height);
 	board.draw();
@@ -866,12 +915,13 @@ function button_go_bot()
 
 function button_go_host()
 {
-	menu = MENU_WORKING;
+	menu = MENU_WAITOPPONENT;
 	board.logic.timecontrol_initialms = parse_time(in_host_time_inital.value);
 	board.logic.timecontrol_addms = parse_time(in_host_time_increment.value);
 	board.reset();
 	peer_connections = new Array();
 	peer_self_id = make_id();
+	p_joincode.innerHTML = peer_self_id;
 	peer_host = new Peer("CHESSGAME_HOST" + peer_self_id);
 	peer_host.on("open", () =>
 	{
@@ -1052,10 +1102,10 @@ function init_debug()
 			board.reset_stockfish();
 		}
 	};
-	document.getElementById("rightcol").appendChild(b_flipboard);
-	document.getElementById("rightcol").appendChild(document.createElement("br"));
+	//document.getElementById("rightcol").appendChild(b_flipboard);
+	//document.getElementById("rightcol").appendChild(document.createElement("br"));
 	//document.getElementById("rightcol").appendChild(b_resetboard);
-	document.getElementById("rightcol").appendChild(document.createElement("br"));
+	//document.getElementById("rightcol").appendChild(document.createElement("br"));
 }
 
 function init_stockfish()
@@ -1066,16 +1116,46 @@ function init_stockfish()
 	stockfish.postMessage("uci");
 }
 
+function scale_canvas()
+{
+	const cw = document.body.clientWidth;
+	const ch = document.body.clientHeight;
+	if (cw != last_win_width ||
+		ch != last_win_height)
+	{
+		last_win_width = cw;
+		last_win_height = ch;
+
+		var factor = cw / (ideal_board_width + 100);
+
+		if (cw >= ideal_board_width + 100)
+		{
+			factor = 1;
+		}
+		board_canvas.width = (ideal_board_width + 100) * factor;
+		board_canvas.height = (ideal_board_height + 150) * factor;
+		board_width = ideal_board_width * factor;
+		board_height = ideal_board_width * factor;
+		board_offx = ideal_board_offx * factor;
+		board_offy = ideal_board_offy * factor;
+	}
+}
+
 function init()
 {
 	h1_title.innerHTML = window.location.host;
-	board_canvas = document.createElement("canvas");
+	board_canvas = document.getElementById("canvas");
 	board_canvas.width = board_width + 100;
-	board_canvas.height = board_height + 200;
-	document.getElementById("centercol").appendChild(board_canvas);
+	board_canvas.height = board_height + 150;
 	document.body.onmousedown = canvas_on_mouse_down;
 	document.body.onmousemove = canvas_on_mouse_move;
 	document.body.onmouseup = canvas_on_mouse_up;
+
+	document.body.ontouchstart = canvas_on_mouse_down;
+	document.body.ontouchend = canvas_on_mouse_up;
+	document.body.ontouchcancel = canvas_on_mouse_up;
+	document.body.ontouchmove = canvas_on_mouse_move;
+
 	board_ctx = board_canvas.getContext("2d");
 	board = new Board();
 	board.reset();

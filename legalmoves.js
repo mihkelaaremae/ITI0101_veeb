@@ -20,9 +20,9 @@ class LogicBoard
 		this.movehistory = [];
 		this.whitetime_ms = 0;
 		this.blacktime_ms = 0;
-		this.activetimer = -1;
+		this.activetimer = -2;
 		this.timecontrol_addms = 1000;
-		this.timecontrol_initialms = 10000 * 60;
+		this.timecontrol_initialms = 10000 * 60 / 50;
 		this.lastheartbeat = null;
 	}
 
@@ -61,7 +61,7 @@ class LogicBoard
 
 	reset()
 	{
-		this.activetimer = -1;
+		this.activetimer = -2;
 		this.whitetime_ms = this.timecontrol_initialms;
 		this.blacktime_ms = this.timecontrol_initialms;
 		for (var i = 0; i < 64; i++)
@@ -92,6 +92,7 @@ class LogicBoard
 		this.side_to_move = SIDE_WHITE;
 		this.promotion_choice = PIECE_QUEEN;
 		this.pgn = "";
+		this.movehistory = [];
 	}
 
 	get_index(x, y)
@@ -341,7 +342,6 @@ class LogicBoard
 			no_moves = this.get_legal_move_count(this.side_to_move) == 0;
 			this.append_pgn(x, y, dest_x, dest_y, p, castle_king, castle_queen, is_check, no_moves, capture, promote);
 		}
-		this.heartbeat();
 		if (s == SIDE_WHITE)
 		{
 			this.whitetime_ms += this.timecontrol_addms;
@@ -350,7 +350,11 @@ class LogicBoard
 		{
 			this.blacktime_ms += this.timecontrol_addms;
 		}
-		this.activetimer = this.side_to_move;
+		this.heartbeat();
+		if (this.activetimer != -1)
+		{
+			this.activetimer = this.side_to_move;
+		}
 	}
 
 	get_king_square(side)
@@ -409,6 +413,7 @@ class LogicBoard
 						{
 							return true;
 						}
+						break;
 					}
 				}
 			}
@@ -432,6 +437,7 @@ class LogicBoard
 						{
 							return true;
 						}
+						break;
 					}
 				}
 			}
@@ -732,11 +738,13 @@ class LogicBoard
 		}
 		if (repeat_count >= 3)
 		{
+			this.activetimer = -1;
 			this.side_to_move = GAMESTAT_DRAW_3FOLD;
 			return;
 		}
 		if (this.halfmoves >= 50)
 		{
+			this.activetimer = -1;
 			this.side_to_move = GAMESTAT_DRAW_50;
 			return;
 		}
@@ -744,6 +752,7 @@ class LogicBoard
 		{
 			if (legal == 0)
 			{
+				this.activetimer = -1;
 				this.side_to_move = this.side_to_move == SIDE_WHITE ? 
 					GAMESTAT_BLACK_WIN_CHECKMATE :
 					GAMESTAT_WHITE_WIN_CHECKMATE;
@@ -754,6 +763,7 @@ class LogicBoard
 		{
 			if (legal == 0)
 			{
+				this.activetimer = -1;
 				this.side_to_move = this.side_to_move == SIDE_WHITE ? 
 					GAMESTAT_DRAW_NOMOVES_WHITE :
 					GAMESTAT_DRAW_NOMOVES_BLACK;

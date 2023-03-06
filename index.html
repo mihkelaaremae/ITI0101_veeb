@@ -7,21 +7,7 @@
 	<link rel="stylesheet" href="styles.css">
 	<body>
 		<div class="row">
-			<div class="col" id="fillcol">
-				<h1 id="h1_title">mihkelaaremae.github.io</h1>
-			</div>
-		</div>
-		<div class="row">
-			<div class="col" id="leftcol">
-				<div id="div_pgn">
-					<p id="p_pgn">PGN:</p>
-				</div>
-				<hr>
-				<div id="div_fen">
-					<p id="p_fen">FEN:</p>
-				</div>
-			</div>
-			<div class="col" id="centercol">
+
 				<div class="centerdiv" id="d_mainmenu">
 					<br>
 					<br>
@@ -73,13 +59,17 @@
 					<br>
 					<p class="menup">Working...</p>
 				</div>
-			</div>
-			<div class="col" id="rightcol"></div>
-		</div>
-		<div class="row">
-			<div class="col" id="fillcol">
-				<p id="p_status"></p>
-			</div>
+				<div class="centerdiv" id="d_waitopponent" hidden>
+					<br>
+					<br>
+					<p class="menup" id="p_joincode"></p>
+					<p class="menup">Waiting for opponent...</p>
+				</div>
+				<div class="centerdiv" id="d_canvas">
+					<h1 id="h1_title">mihkelaaremae.github.io</h1>
+					<canvas id="canvas" width=8 height=8></canvas>
+					<p class="menup" id="p_status"></p>
+				</div>
 		</div>
 	</body>
 	<script type="text/javascript" src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>

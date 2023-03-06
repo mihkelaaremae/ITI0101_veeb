@@ -1,3 +1,50 @@
+body {
+	background-color: #ffffff;
+	font-family: sans-serif;
+	font-size: 16px;
+	line-height: 1.5;
+	margin: 0px;
+	padding:0px;
+}
+
+h1 {
+	font-size: 25px;
+	margin: 0px;
+	margin-top: 20px;
+	color: white;
+}
+
+div {
+	margin: 0px;
+	padding: 0px;
+}
+
+button {
+	margin: 10px auto;
+	padding: 10px;
+	font-size: 18px;
+	font-weight: bold;
+	text-transform: uppercase;
+	color: #fff;
+	background-color: #4CAF50;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: all 0.2s ease-in-out;
+}
+
+button:hover {
+	background-color: #3e8e41;
+}
+
+input {
+	width: 30%;
+	padding: 10px;
+	font-size: 16px;
+	border-radius: 4px;
+	border: 1px solid #ccc;
+}
+
 #leftcol {
 	background-color: darkgray;
 	width:25%;
@@ -26,12 +73,16 @@
 }
 
 .col {
-
+	margin: 0px;
+	background-color: #aca3a3;
+	box-shadow: 0 2px 5px rgba(187, 29, 29, 0.1);
+	border-radius: 4px;
 }
 
 .row {
-	display: flex;
-	justify-content: center;
+	display: grid;
+	height: 100vh;
+	overflow: hidden
 }
 
 .centerdiv {
@@ -42,6 +93,8 @@
 }
 
 canvas {
+	margin: auto;
+	display: block;
 	grid-column: 1;
 	grid-row: 1;
 }
@@ -54,6 +107,7 @@ canvas {
 }
 
 .menup {
+	font-size: 20px;
 	color: white;
 }
 
@@ -77,4 +131,8 @@ p, h1 {
 #p_fen {
 	overflow-wrap: anywhere;
 	font-family: monospace;
+}
+
+#d_canvas {
+	z-index: 3;
 }
