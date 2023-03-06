@@ -1133,7 +1133,7 @@ function scale_canvas()
 			factor = 1;
 		}
 		board_canvas.width = (ideal_board_width + 100) * factor;
-		board_canvas.height = (ideal_board_height + 150) * factor;
+		board_canvas.height = (ideal_board_height + 200) * factor;
 		board_width = ideal_board_width * factor;
 		board_height = ideal_board_width * factor;
 		board_offx = ideal_board_offx * factor;
@@ -1146,7 +1146,7 @@ function init()
 	h1_title.innerHTML = window.location.host;
 	board_canvas = document.getElementById("canvas");
 	board_canvas.width = board_width + 100;
-	board_canvas.height = board_height + 150;
+	board_canvas.height = board_height + 200;
 	document.body.onmousedown = canvas_on_mouse_down;
 	document.body.onmousemove = canvas_on_mouse_move;
 	document.body.onmouseup = canvas_on_mouse_up;
