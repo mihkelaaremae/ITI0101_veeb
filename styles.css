@@ -72,13 +72,6 @@ input {
 	display: grid;
 }
 
-.col {
-	margin: 0px;
-	background-color: #aca3a3;
-	box-shadow: 0 2px 5px rgba(187, 29, 29, 0.1);
-	border-radius: 4px;
-}
-
 .row {
 	display: grid;
 	height: 100vh;
@@ -89,6 +82,7 @@ input {
 	grid-column: 1;
 	grid-row: 1;
 	background: rgba(0, 0, 0, 0.7);
+	background: linear-gradient(180deg, rgba(2,0,36,0.8827906162464986) 0%, rgba(36,23,0,0.7371323529411764) 100%);
 	z-index: 5;
 }
 
@@ -136,4 +130,5 @@ p, h1 {
 
 #d_canvas {
 	z-index: 3;
+	background: linear-gradient(180deg, rgba(2,0,36,1) 0%, rgba(36,23,0,1) 100%);
 }

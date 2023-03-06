@@ -7,69 +7,68 @@
 	<link rel="stylesheet" href="styles.css">
 	<body>
 		<div class="row">
-
-				<div class="centerdiv" id="d_mainmenu">
-					<br>
-					<br>
-					<button class="mainmenubutton" onclick="button_playlocal()">Play locally</button>
-					<button class="mainmenubutton" onclick="button_playbot()">Play against a bot</button>
-					<button class="mainmenubutton" onclick="button_host()">Host a game</button>
-					<button class="mainmenubutton" onclick="button_join()">Join a game</button>
-				</div>
-				<div class="centerdiv" id="d_localoptions" hidden>
-					<br>
-					<br>
-					<button class="mainmenubutton" onclick="button_go_local()">Go</button>
-					<button class="mainmenubutton" onclick="button_back()">Back</button>
-					<p class="menup">Time control initial(hh:mm:ss):</p>
-					<input class="menuin" type="text" id="in_local_time_inital" value="10:00">
-					<p class="menup">Time control increment(mm:ss):</p>
-					<input class="menuin" type="text" id="in_local_time_increment" value="03">
-				</div>
-				<div class="centerdiv" id="d_botoptions" hidden>
-					<br>
-					<br>
-					<button class="mainmenubutton" onclick="button_go_bot()">Go</button>
-					<button class="mainmenubutton" onclick="button_back()">Back</button>
-					<p class="menup">Time control initial(hh:mm:ss):</p>
-					<input class="menuin" type="text" id="in_botl_time_inital" value="10:00">
-					<p class="menup">Time control increment(mm:ss):</p>
-					<input class="menuin" type="text" id="in_bot_time_increment" value="03">
-				</div>
-				<div class="centerdiv" id="d_hostoptions" hidden>
-					<br>
-					<br>
-					<button class="mainmenubutton" onclick="button_go_host()">Go</button>
-					<button class="mainmenubutton" onclick="button_back()">Back</button>
-					<p class="menup">Time control initial(hh:mm:ss):</p>
-					<input class="menuin" type="text" id="in_host_time_inital" value="10:00">
-					<p class="menup">Time control increment(mm:ss):</p>
-					<input class="menuin" type="text" id="in_host_time_increment" value="03">
-				</div>
-				<div class="centerdiv" id="d_joinoptions" hidden>
-					<br>
-					<br>
-					<button class="mainmenubutton" onclick="button_go_join()" id="btn_join" disabled>Go</button>
-					<button class="mainmenubutton" onclick="button_back()">Back</button>
-					<p class="menup">Join code:</p>
-					<input type="text" name="code" class="menuin" id="in_code">
-				</div>
-				<div class="centerdiv" id="d_working" hidden>
-					<br>
-					<br>
-					<p class="menup">Working...</p>
-				</div>
-				<div class="centerdiv" id="d_waitopponent" hidden>
-					<br>
-					<br>
-					<p class="menup" id="p_joincode"></p>
-					<p class="menup">Waiting for opponent...</p>
-				</div>
-				<div class="centerdiv" id="d_canvas">
-					<h1 id="h1_title">mihkelaaremae.github.io</h1>
-					<canvas id="canvas" width=8 height=8></canvas>
-					<p class="menup" id="p_status"></p>
-				</div>
+			<div class="centerdiv" id="d_mainmenu">
+				<br>
+				<br>
+				<button class="mainmenubutton" onclick="button_playlocal()">Play locally</button>
+				<button class="mainmenubutton" onclick="button_playbot()" disabled>Play against a bot</button>
+				<button class="mainmenubutton" onclick="button_host()">Host a game</button>
+				<button class="mainmenubutton" onclick="button_join()">Join a game</button>
+			</div>
+			<div class="centerdiv" id="d_localoptions" hidden>
+				<br>
+				<br>
+				<button class="mainmenubutton" onclick="button_go_local()">Go</button>
+				<button class="mainmenubutton" onclick="button_back()">Back</button>
+				<p class="menup">Time control initial(hh:mm:ss):</p>
+				<input class="menuin" type="text" id="in_local_time_inital" value="10:00">
+				<p class="menup">Time control increment(mm:ss):</p>
+				<input class="menuin" type="text" id="in_local_time_increment" value="03">
+			</div>
+			<div class="centerdiv" id="d_botoptions" hidden>
+				<br>
+				<br>
+				<button class="mainmenubutton" onclick="button_go_bot()">Go</button>
+				<button class="mainmenubutton" onclick="button_back()">Back</button>
+				<p class="menup">Time control initial(hh:mm:ss):</p>
+				<input class="menuin" type="text" id="in_botl_time_inital" value="10:00">
+				<p class="menup">Time control increment(mm:ss):</p>
+				<input class="menuin" type="text" id="in_bot_time_increment" value="03">
+			</div>
+			<div class="centerdiv" id="d_hostoptions" hidden>
+				<br>
+				<br>
+				<button class="mainmenubutton" onclick="button_go_host()">Go</button>
+				<button class="mainmenubutton" onclick="button_back()">Back</button>
+				<p class="menup">Time control initial(hh:mm:ss):</p>
+				<input class="menuin" type="text" id="in_host_time_inital" value="10:00">
+				<p class="menup">Time control increment(mm:ss):</p>
+				<input class="menuin" type="text" id="in_host_time_increment" value="03">
+			</div>
+			<div class="centerdiv" id="d_joinoptions" hidden>
+				<br>
+				<br>
+				<button class="mainmenubutton" onclick="button_go_join()" id="btn_join" disabled>Go</button>
+				<button class="mainmenubutton" onclick="button_back()">Back</button>
+				<p class="menup">Join code:</p>
+				<input type="text" name="code" class="menuin" id="in_code">
+			</div>
+			<div class="centerdiv" id="d_working" hidden>
+				<br>
+				<br>
+				<p class="menup">Working...</p>
+			</div>
+			<div class="centerdiv" id="d_waitopponent" hidden>
+				<br>
+				<br>
+				<p class="menup" id="p_joincode"></p>
+				<p class="menup">Waiting for opponent...</p>
+			</div>
+			<div class="centerdiv" id="d_canvas">
+				<h1 id="h1_title">mihkelaaremae.github.io</h1>
+				<canvas id="canvas" width=8 height=8></canvas>
+				<p class="menup" id="p_status"></p>
+			</div>
 		</div>
 	</body>
 	<script type="text/javascript" src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>

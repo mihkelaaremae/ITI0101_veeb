@@ -227,6 +227,39 @@ class Piece
 		const h = images["pieces"].height;
 		var bx = this.x;
 		var by = this.y;
+		const pw = Math.floor(board_width/8);
+		const ph = Math.floor(board_height/8);
+		if (board.facing_side == SIDE_WHITE)
+		{
+			by = 7 - by;
+		}
+		else
+		{
+			bx = 7 - bx;
+		}
+		if (!this.is_lifted)
+		{
+			board_ctx.globalAlpha = 1;
+			board_ctx.drawImage(images["pieces"], 
+				this.piece * w / 6, 
+				this.side * h / 2, 
+				w / 6, 
+				h / 2, 
+				Math.floor(bx*board_width/8 + board_offx), 
+				Math.floor(by*board_height/8 + board_offy), 
+				pw, 
+				ph);
+		}
+	}
+
+	draw_lifted(board)
+	{
+		const w = images["pieces"].width;
+		const h = images["pieces"].height;
+		var bx = this.x;
+		var by = this.y;
+		const pw = Math.floor(board_width/8);
+		const ph = Math.floor(board_height/8);
 		if (board.facing_side == SIDE_WHITE)
 		{
 			by = 7 - by;
@@ -243,34 +276,21 @@ class Piece
 				this.side * h / 2, 
 				w / 6, 
 				h / 2, 
-				bx*board_width/8 + board_offx, 
-				by*board_height/8 + board_offy, 
-				board_width/8, 
-				board_height/8);
+				Math.floor(bx*board_width/8 + board_offx), 
+				Math.floor(by*board_height/8 + board_offy), 
+				pw, 
+				ph);
 			board_ctx.globalAlpha = 0.4;
 			board_ctx.drawImage(images["pieces"], 
 				this.piece * w / 6, 
 				this.side * h / 2, 
 				w / 6, 
 				h / 2, 
-				mouse_x + this.grab_offx, 
-				mouse_y + this.grab_offy,
-				board_width/8, 
-				board_height/8);
+				Math.floor(mouse_x + this.grab_offx), 
+				Math.floor(mouse_y + this.grab_offy),
+				pw, 
+				pw);
 			board_ctx.globalAlpha = 1;
-		}
-		else
-		{
-			board_ctx.globalAlpha = 1;
-			board_ctx.drawImage(images["pieces"], 
-				this.piece * w / 6, 
-				this.side * h / 2, 
-				w / 6, 
-				h / 2, 
-				bx*board_width/8 + board_offx, 
-				by*board_height/8 + board_offy, 
-				board_width/8, 
-				board_height/8);
 		}
 	}
 
@@ -594,6 +614,10 @@ class Board
 		{
 			p.draw(this);
 		}
+		for (const p of this.pieces)
+		{
+			p.draw_lifted(this);
+		}
 	}
 
 	draw_legalmoves()
@@ -699,7 +723,7 @@ class Board
 
 function canvas_on_mouse_down(e)
 {
-	console.log(e);
+	//console.log(e);
 	const rect = board_canvas.getBoundingClientRect();
 	if (e.type == "touchstart")
 	{
@@ -723,7 +747,7 @@ function canvas_on_mouse_down(e)
 		return;
 	}
 	mouse_button = true;
-	console.log(mouse_x + " " + mouse_y);
+	//console.log(mouse_x + " " + mouse_y);
 	if (board.grab_piece(mouse_x, mouse_y))
 	{
 		if (e.type == "mousedown")
@@ -1110,10 +1134,10 @@ function init_debug()
 
 function init_stockfish()
 {
-	stockfish = new Worker("stockfish.js");
+	/*stockfish = new Worker("stockfish.js");
 	stockfish.onmessage = stockfish_message;
 	stockfish.onerror = stockfish_error;
-	stockfish.postMessage("uci");
+	stockfish.postMessage("uci");*/
 }
 
 function scale_canvas()
@@ -1128,7 +1152,11 @@ function scale_canvas()
 
 		var factor = cw / (ideal_board_width + 100);
 
-		if (cw >= ideal_board_width + 100)
+		factor = Math.min(factor, ch / (ideal_board_height + 200) - 0.2);
+		factor = Math.min(factor, 1);
+		factor = Math.max(factor, 0.2);
+
+		if (factor >= 1.0)
 		{
 			factor = 1;
 		}
