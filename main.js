@@ -554,16 +554,16 @@ class Board
 		board_ctx.textBaseline = "middle";
 		if (this.facing_side == SIDE_WHITE)
 		{
-			board_ctx.fillStyle = "white";
+			board_ctx.fillStyle = "#d0d0f0";
 			board_ctx.fillText(format_time(this.logic.whitetime_ms), board_offx + 50, board_offy + board_height + 30);
-			board_ctx.fillStyle = "black";
+			board_ctx.fillStyle = "#c07070";
 			board_ctx.fillText(format_time(this.logic.blacktime_ms), board_offx + 50, board_offy - 30);
 		}
 		else
 		{
-			board_ctx.fillStyle = "white";
+			board_ctx.fillStyle = "#d0d0f0";
 			board_ctx.fillText(format_time(this.logic.whitetime_ms), board_offx + 50, board_offy - 30);
-			board_ctx.fillStyle = "black";
+			board_ctx.fillStyle = "#c07070";
 			board_ctx.fillText(format_time(this.logic.blacktime_ms), board_offx + 50, board_offy + board_height + 30);
 		}
 	}
