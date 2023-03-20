@@ -9,6 +9,7 @@ const d_hostoptions = document.getElementById("d_hostoptions");
 const d_joinoptions = document.getElementById("d_joinoptions");
 const d_working = document.getElementById("d_working");
 const d_waitopponent = document.getElementById("d_waitopponent");
+const d_settings = document.getElementById("d_settings");
 const in_code = document.getElementById("in_code");
 const in_local_time_inital = document.getElementById("in_local_time_inital");
 const in_local_time_increment = document.getElementById("in_local_time_increment");
@@ -24,11 +25,12 @@ const board_darkcolor = "#501010";
 const board_lightcolor = "#c0c0e0";
 const board_bordercolor = "#803030";
 const board_yellowcolor = "#e0e070";
-const board_borderwidth = 20;
 const board_promote_triangle = 15;
 const board_promote_margin = 5;
 
 const board_promotionalpha = 0.6;
+
+var pieces_image = "pieces";
 
 var last_win_width = 0;
 var last_win_height = 0;
@@ -37,11 +39,15 @@ var ideal_board_width = 512;
 var ideal_board_height = 512;
 var ideal_board_offx = 50;
 var ideal_board_offy = 100;
+var ideal_board_borderwidth = 20;
+var ideal_board_borderheight = 20;
 
 var board_width = 512;
 var board_height = 512;
 var board_offx = 50;
 var board_offy = 100;
+var board_borderwidth = 20;
+var board_borderheight = 20;
 
 var peer_host;
 var peer_self_id;
@@ -127,8 +133,10 @@ const MENU_HOSTOPTIONS = 4;
 const MENU_JOINOPTIONS = 5;
 const MENU_WORKING = 6;
 const MENU_WAITOPPONENT = 7;
+const MENU_SETTINGS = 8;
 
 var menu = MENU_MAINMENU;
+var lastmenu = null;
 
 var board;
 
@@ -223,8 +231,9 @@ class Piece
 	
 	draw(board)
 	{
-		const w = images["pieces"].width;
-		const h = images["pieces"].height;
+		const w = images[pieces_image].width;
+		const h = images[pieces_image].height;
+		const f = (h/2)/(w/6);
 		var bx = this.x;
 		var by = this.y;
 		const pw = Math.floor(board_width/8);
@@ -240,22 +249,23 @@ class Piece
 		if (!this.is_lifted)
 		{
 			board_ctx.globalAlpha = 1;
-			board_ctx.drawImage(images["pieces"], 
+			board_ctx.drawImage(images[pieces_image], 
 				this.piece * w / 6, 
 				this.side * h / 2, 
 				w / 6, 
 				h / 2, 
 				Math.floor(bx*board_width/8 + board_offx), 
-				Math.floor(by*board_height/8 + board_offy), 
+				Math.floor((by+1)*board_height/8 - pw * f + board_offy), 
 				pw, 
-				ph);
+				pw * f);
 		}
 	}
 
 	draw_lifted(board)
 	{
-		const w = images["pieces"].width;
-		const h = images["pieces"].height;
+		const w = images[pieces_image].width;
+		const h = images[pieces_image].height;
+		const f = (h/2)/(w/6);
 		var bx = this.x;
 		var by = this.y;
 		const pw = Math.floor(board_width/8);
@@ -271,25 +281,25 @@ class Piece
 		if (this.is_lifted)
 		{
 			board_ctx.globalAlpha = 0.4;
-			board_ctx.drawImage(images["pieces"], 
+			board_ctx.drawImage(images[pieces_image], 
 				this.piece * w / 6, 
 				this.side * h / 2, 
 				w / 6, 
 				h / 2, 
 				Math.floor(bx*board_width/8 + board_offx), 
-				Math.floor(by*board_height/8 + board_offy), 
+				Math.floor((by+1)*board_height/8 - pw * f + board_offy), 
 				pw, 
-				ph);
+				pw * f);
 			board_ctx.globalAlpha = 0.4;
-			board_ctx.drawImage(images["pieces"], 
+			board_ctx.drawImage(images[pieces_image], 
 				this.piece * w / 6, 
 				this.side * h / 2, 
 				w / 6, 
 				h / 2, 
 				Math.floor(mouse_x + this.grab_offx), 
-				Math.floor(mouse_y + this.grab_offy),
+				Math.floor(mouse_y + board_height/8 - pw * f + this.grab_offy),
 				pw, 
-				pw);
+				pw * f);
 			board_ctx.globalAlpha = 1;
 		}
 	}
@@ -567,11 +577,23 @@ class Board
 			board_ctx.fillText(format_time(this.logic.blacktime_ms), board_offx + 50, board_offy + board_height + 30);
 		}
 	}
+
+	draw_board_3d()
+	{
+		board_ctx.drawImage(this.facing_side == SIDE_WHITE ? images["boardwhite"] : images["boardblack"], 
+			board_offx - board_borderwidth, board_offy - board_borderheight, 
+			board_width + board_borderwidth * 2, board_height + board_borderheight * (2 + 17/38));
+	}
 	
 	draw_board()
 	{
+		if (pieces_image == "pieces3d")
+		{
+			this.draw_board_3d();
+			return;
+		}
 		board_ctx.fillStyle = board_bordercolor;
-		board_ctx.fillRect(board_offx - board_borderwidth, board_offy - board_borderwidth, board_width + board_borderwidth * 2, board_height + board_borderwidth * 2);
+		board_ctx.fillRect(board_offx - board_borderwidth, board_offy - board_borderheight, board_width + board_borderwidth * 2, board_height + board_borderheight * 2);
 		for (var i = 0; i < 8; i++)
 		{
 			for (var j = 0; j < 8; j++)
@@ -603,16 +625,22 @@ class Board
 			{
 				index = 7 - i;
 			}
-			board_ctx.fillText(files[index], board_offx + i*board_width/8 + board_width/16, board_offy + board_height + board_borderwidth / 2);
+			board_ctx.fillText(files[index], board_offx + i*board_width/8 + board_width/16, board_offy + board_height + board_borderheight / 2);
 			board_ctx.fillText(ranks[7-index], board_offx - board_borderwidth / 2, board_offy + i*board_height/8 + board_height/16);
 		}
 	}
 	
 	draw_pieces()
 	{
-		for (const p of this.pieces)
+		for (var i = 7; i >= 0 ; i--)
 		{
-			p.draw(this);
+			for (const p of this.pieces)
+			{
+				if (i == p.y)
+				{
+					p.draw(this);
+				}
+			}
 		}
 		for (const p of this.pieces)
 		{
@@ -692,9 +720,9 @@ class Board
 				this.logic.promotion_choice = pieces[i];
 				this.complete_move();
 			}
-			const w = images["pieces"].width;
-			const h = images["pieces"].height;
-			board_ctx.drawImage(images["pieces"], 
+			const w = images[pieces_image].width;
+			const h = images[pieces_image].height;
+			board_ctx.drawImage(images[pieces_image], 
 				pieces[i] * w / 6, 
 				this.logic.side_to_move * h / 2, 
 				w / 6, 
@@ -789,6 +817,11 @@ function canvas_on_mouse_up(e)
 
 function switchmenu()
 {
+	if (menu == lastmenu)
+	{
+		return;
+	}
+	lastmenu = menu;
 	if (menu == MENU_GAMING)
 	{
 		board.enable_board = true;
@@ -797,88 +830,51 @@ function switchmenu()
 	{
 		board.enable_board = false;
 	}
+	d_mainmenu.hidden = true;
+	d_localoptions.hidden = true;
+	d_botoptions.hidden = true;
+	d_hostoptions.hidden = true;
+	d_joinoptions.hidden = true;
+	d_working.hidden = true;
+	d_waitopponent.hidden = true;
+	d_settings.hidden = true;
 	switch (menu)
 	{
 	case MENU_GAMING:
-		d_mainmenu.hidden = true;
-		d_localoptions.hidden = true;
-		d_botoptions.hidden = true;
-		d_hostoptions.hidden = true;
-		d_joinoptions.hidden = true;
-		d_working.hidden = true;
-		d_waitopponent.hidden = true;
 		break;
 
 	case MENU_MAINMENU:
 		d_mainmenu.hidden = false;
-		d_localoptions.hidden = true;
-		d_botoptions.hidden = true;
-		d_hostoptions.hidden = true;
-		d_joinoptions.hidden = true;
-		d_working.hidden = true;
-		d_waitopponent.hidden = true;
 		h1_title.innerHTML = window.location.host;
 		break;
 
 	case MENU_LOCALOPTIONS:
-		d_mainmenu.hidden = true;
 		d_localoptions.hidden = false;
-		d_botoptions.hidden = true;
-		d_hostoptions.hidden = true;
-		d_joinoptions.hidden = true;
-		d_waitopponent.hidden = true;
-		d_working.hidden = true;
 		break;
 
 	case MENU_BOTOPTIONS:
-		d_mainmenu.hidden = true;
-		d_localoptions.hidden = true;
 		d_botoptions.hidden = false;
-		d_hostoptions.hidden = true;
-		d_joinoptions.hidden = true;
-		d_waitopponent.hidden = true;
-		d_working.hidden = true;
 		break;
 
 	case MENU_HOSTOPTIONS:
-		d_mainmenu.hidden = true;
-		d_localoptions.hidden = true;
-		d_botoptions.hidden = true;
 		d_hostoptions.hidden = false;
-		d_joinoptions.hidden = true;
-		d_waitopponent.hidden = true;
-		d_working.hidden = true;
 		break;
 
 	case MENU_JOINOPTIONS:
-		d_mainmenu.hidden = true;
-		d_localoptions.hidden = true;
-		d_botoptions.hidden = true;
-		d_hostoptions.hidden = true;
 		d_joinoptions.hidden = false;
-		d_waitopponent.hidden = true;
-		d_working.hidden = true;
 		btn_join.disabled = !check_id(in_code.value);
 		break;
 
 	case MENU_WORKING:
-		d_mainmenu.hidden = true;
-		d_localoptions.hidden = true;
-		d_botoptions.hidden = true;
-		d_hostoptions.hidden = true;
-		d_joinoptions.hidden = true;
-		d_waitopponent.hidden = true;
 		d_working.hidden = false;
 		break;
 
 	case MENU_WAITOPPONENT:
-		d_mainmenu.hidden = true;
-		d_localoptions.hidden = true;
-		d_botoptions.hidden = true;
-		d_hostoptions.hidden = true;
-		d_joinoptions.hidden = true;
 		d_waitopponent.hidden = false;
-		d_working.hidden = true;
+		break;
+
+	case MENU_SETTINGS:
+		d_settings.hidden = false;
 		break;
 	}
 }
@@ -919,6 +915,42 @@ function button_join()
 function button_back()
 {
 	menu = MENU_MAINMENU;
+}
+
+function button_settings()
+{
+	menu = MENU_SETTINGS;
+}
+
+function button_notsettings()
+{
+	menu = MENU_GAMING;
+}
+
+function button_switch3d()
+{
+	if (pieces_image == "pieces")
+	{
+		const s = 1.3/1.87890625;
+		pieces_image = "pieces3d";
+		ideal_board_width = (1084-61*2)*s;
+		ideal_board_height = (714-38-56)*s;
+		ideal_board_offx = 50;
+		ideal_board_offy = 100;
+		ideal_board_borderwidth = 61*s;
+		ideal_board_borderheight = 38*s;
+	}
+	else
+	{
+		pieces_image = "pieces";
+		ideal_board_width = 512;
+		ideal_board_height = 512;
+		ideal_board_offx = 50;
+		ideal_board_offy = 100;
+		board_borderwidth = 20;
+		board_borderheight = 20;
+	}
+	last_win_width = 0;
 }
 
 function button_go_local()
@@ -1099,6 +1131,9 @@ function stockfish_error(message)
 function init_images()
 {
 	load_image("pieces", "nupud.png");
+	load_image("pieces3d", "nupud3d.png");
+	load_image("boardblack", "boardblack.png");
+	load_image("boardwhite", "boardwhite.png");
 	for (var [key, value] of Object.entries(images))
 	{
 		value.src = value.imagesource;
@@ -1156,16 +1191,19 @@ function scale_canvas()
 		factor = Math.min(factor, 1);
 		factor = Math.max(factor, 0.2);
 
-		if (factor >= 1.0)
+		if (factor >= ideal_board_width/ideal_board_height)
 		{
-			factor = 1;
+			factor = ideal_board_width/ideal_board_height;
 		}
+		console.log("factor")
 		board_canvas.width = (ideal_board_width + 100) * factor;
 		board_canvas.height = (ideal_board_height + 200) * factor;
 		board_width = ideal_board_width * factor;
-		board_height = ideal_board_width * factor;
+		board_height = ideal_board_height * factor;
 		board_offx = ideal_board_offx * factor;
 		board_offy = ideal_board_offy * factor;
+		board_borderwidth = ideal_board_borderwidth * factor;
+		board_borderheight = ideal_board_borderheight * factor;
 	}
 }
 

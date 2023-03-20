@@ -20,7 +20,7 @@ div {
 }
 
 button {
-	margin: 10px auto;
+	margin: 10px;
 	padding: 10px;
 	font-size: 18px;
 	font-weight: bold;
@@ -31,6 +31,8 @@ button {
 	border-radius: 4px;
 	cursor: pointer;
 	transition: all 0.2s ease-in-out;
+	display: block;
+	margin: auto;
 }
 
 button:hover {
