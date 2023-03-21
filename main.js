@@ -30,6 +30,9 @@ const board_promote_margin = 5;
 
 const board_promotionalpha = 0.6;
 
+var stockfish_done = false;
+var stockfish_initing = false;
+
 var pieces_image = "pieces";
 
 var last_win_width = 0;
@@ -182,6 +185,13 @@ function encode_file(x)
 {
 	const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
 	return files[x];
+}
+
+function decode_coordinates(x)
+{
+	const files = {"a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7};
+	const ranks = {"1":0, "2":1, "3":2, "4":3, "5":4, "6":5, "7":6, "8":7};
+	return [files[x.charAt(0)], ranks[x.charAt(1)], files[x.charAt(2)], ranks[x.charAt(3)]];
 }
 
 function format_time(ms)
@@ -402,6 +412,11 @@ class Board
 		this.promotion_prompt = false;
 		this.logic.move_piece(this.move_from_x, this.move_from_y, this.move_to_x, this.move_to_y);
 		this.update_board();
+		if (gametype == GAMETYPE_BOT && this.logic.side_to_move == this.disabled_side)
+		{
+			stockfish.postMessage("position fen \"" + board.logic.get_fen() + "\"");
+			stockfish.postMessage("go");
+		}
 	}
 
 	moved_piece(p)
@@ -537,8 +552,6 @@ class Board
 				return null;
 			}
 			p.is_lifted = true;
-			/*p.grab_offx = p.x * board_width / 8 - x;
-			p.grab_offy = p.y * board_height / 8 - y;*/
 			p.grab_offx = this.visual_x(p.x) - x;
 			p.grab_offy = this.visual_y(p.y) - y;
 		}
@@ -963,10 +976,21 @@ function button_go_local()
 
 function button_go_bot()
 {
-	menu = MENU_GAMING;
-	board.logic.timecontrol_initialms = parse_time(in_bot_time_inital.value);
-	board.logic.timecontrol_addms = parse_time(in_bot_time_increment.value);
-	board.reset();
+	if (stockfish_done)
+	{
+		menu = MENU_GAMING;
+		board.logic.timecontrol_initialms = parse_time(in_bot_time_inital.value);
+		board.logic.timecontrol_addms = parse_time(in_bot_time_increment.value);
+		board.reset();
+		board.facing_side = SIDE_WHITE;
+		board.disabled_side = 1-board.facing_side;
+	}
+	else
+	{
+		menu = MENU_WORKING;
+		init_stockfish();
+	}	
+	gametype = GAMETYPE_BOT;
 }
 
 function button_go_host()
@@ -1120,6 +1144,21 @@ function load_image(name, src)
 function stockfish_message(message)
 {
 	console.log(message.data);
+	if (message.data == "uciok")
+	{
+		menu = MENU_GAMING;
+		board.logic.timecontrol_initialms = parse_time(in_bot_time_inital.value);
+		board.logic.timecontrol_addms = parse_time(in_bot_time_increment.value);
+		board.reset();
+		board.facing_side = SIDE_WHITE;
+		board.disabled_side = 1-board.facing_side;
+	}
+	if (message.data.startsWith("bestmove"))
+	{
+		console.log("SADHDASGYDSAG");
+		[board.move_from_x, board.move_from_y, board.move_to_x, board.move_to_y] = decode_coordinates(message.data.split(" ")[1]);
+		board.complete_move();
+	}
 }
 
 function stockfish_error(message)
@@ -1169,10 +1208,11 @@ function init_debug()
 
 function init_stockfish()
 {
-	/*stockfish = new Worker("stockfish.js");
+	stockfish = new Worker("stockfish.js");
 	stockfish.onmessage = stockfish_message;
 	stockfish.onerror = stockfish_error;
-	stockfish.postMessage("uci");*/
+	stockfish.postMessage("uci");
+	stockfish_initing = true;
 }
 
 function scale_canvas()
@@ -1230,7 +1270,7 @@ function init()
 		init_debug();
 	}
 	init_images();
-	init_stockfish();
+	//init_stockfish();
 	board.reset_stockfish();
 	const id = window.location.search.substring(1);
 	if (window.location.search != "" && check_id(id))
