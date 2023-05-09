@@ -10,6 +10,9 @@ const d_joinoptions = document.getElementById("d_joinoptions");
 const d_working = document.getElementById("d_working");
 const d_waitopponent = document.getElementById("d_waitopponent");
 const d_settings = document.getElementById("d_settings");
+const d_chat = document.getElementById("d_chat");
+const d_scrollbox = document.getElementById("d_scrollbox");
+
 const in_code = document.getElementById("in_code");
 const in_local_time_inital = document.getElementById("in_local_time_inital");
 const in_local_time_increment = document.getElementById("in_local_time_increment");
@@ -17,9 +20,16 @@ const in_bot_time_inital = document.getElementById("in_bot_time_inital");
 const in_bot_time_increment = document.getElementById("in_bot_time_increment");
 const in_host_time_inital = document.getElementById("in_host_time_inital");
 const in_host_time_increment = document.getElementById("in_host_time_increment");
+const in_chat = document.getElementById("in_chat");
+
+const in_bot_white = document.getElementById("in_bot_white");
+const in_host_white = document.getElementById("in_host_white");
+
 const btn_join = document.getElementById("btn_join");
 const h1_title = document.getElementById("h1_title");
 const p_joincode = document.getElementById("p_joincode");
+
+const btn_chat = document.getElementById("btn_chat");
 
 const board_darkcolor = "#501010";
 const board_lightcolor = "#c0c0e0";
@@ -29,6 +39,9 @@ const board_promote_triangle = 15;
 const board_promote_margin = 5;
 
 const board_promotionalpha = 0.6;
+
+var board_timer_up_offset = 0;
+var board_timer_down_offset = 0;
 
 var stockfish_done = false;
 var stockfish_initing = false;
@@ -52,9 +65,9 @@ var board_offy = 100;
 var board_borderwidth = 20;
 var board_borderheight = 20;
 
-var peer_host;
-var peer_self_id;
-var peer_client_connection;
+var peer_host = null;
+var peer_self_id = "";
+var peer_client_connection = null;
 var peer_connections = new Array();
 
 const GAMETYPE_LOCAL = 0;
@@ -137,6 +150,7 @@ const MENU_JOINOPTIONS = 5;
 const MENU_WORKING = 6;
 const MENU_WAITOPPONENT = 7;
 const MENU_SETTINGS = 8;
+const MENU_CHAT = 9;
 
 var menu = MENU_MAINMENU;
 var lastmenu = null;
@@ -187,13 +201,6 @@ function encode_file(x)
 	return files[x];
 }
 
-function decode_coordinates(x)
-{
-	const files = {"a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7};
-	const ranks = {"1":0, "2":1, "3":2, "4":3, "5":4, "6":5, "7":6, "8":7};
-	return [files[x.charAt(0)], ranks[x.charAt(1)], files[x.charAt(2)], ranks[x.charAt(3)]];
-}
-
 function format_time(ms)
 {
 	if (ms > 1000*60*60)
@@ -204,6 +211,13 @@ function format_time(ms)
 	{
 		return String(Math.floor(ms/1000/60) % 60).padStart(2, '0') + ":" + String(Math.floor(ms/1000) % 60).padStart(2, '0');
 	}
+}
+
+function decode_coordinates(x)
+{
+	const files = {"a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7};
+	const ranks = {"1":0, "2":1, "3":2, "4":3, "5":4, "6":5, "7":6, "8":7};
+	return [files[x.charAt(0)], ranks[x.charAt(1)], files[x.charAt(2)], ranks[x.charAt(3)]];
 }
 
 function parse_time(string)
@@ -258,7 +272,6 @@ class Piece
 		}
 		if (!this.is_lifted)
 		{
-			board_ctx.globalAlpha = 1;
 			board_ctx.drawImage(images[pieces_image], 
 				this.piece * w / 6, 
 				this.side * h / 2, 
@@ -276,21 +289,12 @@ class Piece
 		const w = images[pieces_image].width;
 		const h = images[pieces_image].height;
 		const f = (h/2)/(w/6);
-		var bx = this.x;
-		var by = this.y;
+		var bx = board.flip_x(this.x);
+		var by = board.flip_y(this.y);
 		const pw = Math.floor(board_width/8);
 		const ph = Math.floor(board_height/8);
-		if (board.facing_side == SIDE_WHITE)
-		{
-			by = 7 - by;
-		}
-		else
-		{
-			bx = 7 - bx;
-		}
 		if (this.is_lifted)
 		{
-			board_ctx.globalAlpha = 0.4;
 			board_ctx.drawImage(images[pieces_image], 
 				this.piece * w / 6, 
 				this.side * h / 2, 
@@ -300,7 +304,6 @@ class Piece
 				Math.floor((by+1)*board_height/8 - pw * f + board_offy), 
 				pw, 
 				pw * f);
-			board_ctx.globalAlpha = 0.4;
 			board_ctx.drawImage(images[pieces_image], 
 				this.piece * w / 6, 
 				this.side * h / 2, 
@@ -310,7 +313,6 @@ class Piece
 				Math.floor(mouse_y + board_height/8 - pw * f + this.grab_offy),
 				pw, 
 				pw * f);
-			board_ctx.globalAlpha = 1;
 		}
 	}
 
@@ -318,8 +320,6 @@ class Piece
 	{
 		if (this.is_lifted)
 		{
-			board_ctx.globalAlpha = 0.4;
-			board_ctx.fillStyle = "black";
 			for (var i = 0; i < this.legalmoves.length; i++)
 			{
 				board_ctx.fillRect(
@@ -328,7 +328,6 @@ class Piece
 					board_width/8 * 0.5, 
 					board_height/8 * 0.5);
 			}
-			board_ctx.globalAlpha = 1;
 		}
 	}
 }
@@ -350,6 +349,7 @@ class Board
 		this.move_to_y = -1;
 		this.enable_board = false;
 		this.disabled_side = -1;
+		this.something_changed = false;
 	}
 
 	flip()
@@ -389,9 +389,32 @@ class Board
 	update_board()
 	{
 		this.logic.compute_state();
-		if (this.logic.side_to_move > 2)
+		if (this.logic.side_to_move > 1)
 		{
 			this.gameend();
+			if (this.logic.side_to_move === GAMESTAT_WHITE_WIN_CHECKMATE ||
+				this.logic.side_to_move === GAMESTAT_WHITE_WIN_TIME ||
+				this.logic.side_to_move === GAMESTAT_WHITE_WIN_RESIGN)
+			{
+				whitewongif();
+			}
+			if (this.logic.side_to_move === GAMESTAT_BLACK_WIN_CHECKMATE ||
+				this.logic.side_to_move === GAMESTAT_BLACK_WIN_TIME ||
+				this.logic.side_to_move === GAMESTAT_BLACK_WIN_RESIGN)
+			{
+				blackwongif();
+			}
+			if (this.logic.side_to_move === GAMESTAT_DRAW_NOMOVES_WHITE ||
+				this.logic.side_to_move === GAMESTAT_DRAW_NOMOVES_BLACK ||
+				this.logic.side_to_move === GAMESTAT_DRAW_WHITE_INSUFFICIENT_VS_BLACK_TIMEOUT ||
+				this.logic.side_to_move === GAMESTAT_DRAW_BLACK_INSUFFICIENT_VS_WHITE_TIMEOUT ||
+				this.logic.side_to_move === GAMESTAT_DRAW_50 ||
+				this.logic.side_to_move === GAMESTAT_DRAW_3FOLD ||
+				this.logic.side_to_move === GAMESTAT_DRAW_SHAKE_HANDS ||
+				this.logic.side_to_move === GAMESTAT_DRAW_INSUFFICIENT_MAT)
+			{
+				drawgif();
+			}
 		}
 		p_status.innerHTML = GAMESTAT_DESC[this.logic.side_to_move];
 		//p_pgn.innerHTML = "PGN:\n" + this.logic.pgn;
@@ -407,7 +430,10 @@ class Board
 		}
 		if (gametype == GAMETYPE_HOST)
 		{
-			peer_connections[0].send("move " + this.move_from_x + " " + this.move_from_y + " " + this.move_to_x + " " + this.move_to_y + " " + this.logic.promotion_choice + " " + this.logic.whitetime_ms + " " + this.logic.blacktime_ms);
+			for (var i = 0; i < peer_connections.length; i++)
+			{
+				peer_connections[i].send("move " + this.move_from_x + " " + this.move_from_y + " " + this.move_to_x + " " + this.move_to_y + " " + this.logic.promotion_choice + " " + this.logic.whitetime_ms + " " + this.logic.blacktime_ms);
+			}
 		}
 		this.promotion_prompt = false;
 		this.logic.move_piece(this.move_from_x, this.move_from_y, this.move_to_x, this.move_to_y);
@@ -417,6 +443,7 @@ class Board
 			stockfish.postMessage("position fen \"" + board.logic.get_fen() + "\"");
 			stockfish.postMessage("go");
 		}
+		this.something_changed = true;
 	}
 
 	moved_piece(p)
@@ -431,10 +458,12 @@ class Board
 		{
 			this.complete_move();
 		}
+		this.something_changed = true;
 	}
 	
 	unlift_all()
 	{
+		this.something_changed = true;
 		for (const p of this.pieces)
 		{
 			if (p.is_lifted)
@@ -474,14 +503,8 @@ class Board
 		this.logic.reset();
 		this.reconstruct();
 		this.logic.compute_state();
+		this.something_changed = true;
 		p_status.innerHTML = GAMESTAT_DESC[this.logic.side_to_move];
-	}
-	
-	reset_stockfish()
-	{
-		//stockfish.postMessage("ucinewgame");
-		//stockfish.postMessage("position fen \"" + board.get_fen() + "\"");
-		//stockfish.postMessage("go");
 	}
 
 	board_x(x)
@@ -542,6 +565,7 @@ class Board
 	
 	grab_piece(x, y)
 	{
+		this.something_changed = true;
 		const bx = this.board_x(x);
 		const by = this.board_y(y);
 		var p = this.get_piece(bx, by);
@@ -552,6 +576,8 @@ class Board
 				return null;
 			}
 			p.is_lifted = true;
+			/*p.grab_offx = p.x * board_width / 8 - x;
+			p.grab_offy = p.y * board_height / 8 - y;*/
 			p.grab_offx = this.visual_x(p.x) - x;
 			p.grab_offy = this.visual_y(p.y) - y;
 		}
@@ -578,16 +604,16 @@ class Board
 		if (this.facing_side == SIDE_WHITE)
 		{
 			board_ctx.fillStyle = "#d0d0f0";
-			board_ctx.fillText(format_time(this.logic.whitetime_ms), board_offx + 50, board_offy + board_height + 30);
+			board_ctx.fillText(format_time(this.logic.whitetime_ms), board_offx + 50, board_offy + board_height + 30 + board_timer_down_offset);
 			board_ctx.fillStyle = "#c07070";
-			board_ctx.fillText(format_time(this.logic.blacktime_ms), board_offx + 50, board_offy - 30);
+			board_ctx.fillText(format_time(this.logic.blacktime_ms), board_offx + 50, board_offy - 30 + board_timer_up_offset);
 		}
 		else
 		{
 			board_ctx.fillStyle = "#d0d0f0";
-			board_ctx.fillText(format_time(this.logic.whitetime_ms), board_offx + 50, board_offy - 30);
+			board_ctx.fillText(format_time(this.logic.whitetime_ms), board_offx + 50, board_offy - 30 + board_timer_up_offset);
 			board_ctx.fillStyle = "#c07070";
-			board_ctx.fillText(format_time(this.logic.blacktime_ms), board_offx + 50, board_offy + board_height + 30);
+			board_ctx.fillText(format_time(this.logic.blacktime_ms), board_offx + 50, board_offy + board_height + 30 + board_timer_down_offset);
 		}
 	}
 
@@ -607,23 +633,28 @@ class Board
 		}
 		board_ctx.fillStyle = board_bordercolor;
 		board_ctx.fillRect(board_offx - board_borderwidth, board_offy - board_borderheight, board_width + board_borderwidth * 2, board_height + board_borderheight * 2);
+		board_ctx.fillStyle = board_lightcolor;
+		board_ctx.fillRect(board_offx, board_offy, board_width, board_height);
+		board_ctx.fillStyle = board_darkcolor;
 		for (var i = 0; i < 8; i++)
 		{
 			for (var j = 0; j < 8; j++)
 			{
-				board_ctx.fillStyle = (((i+j)%2) == 0) ? board_lightcolor : board_darkcolor;
-				board_ctx.fillRect(i*board_width/8 + board_offx, j*board_height/8 + board_offy, board_width/8, board_height/8);
-				if ((this.flip_x(i) == this.move_from_x &&
-					this.flip_y(j) == this.move_from_y) ||
-					(this.flip_x(i) == this.move_to_x &&
-					this.flip_y(j) == this.move_to_y))
+				if ((i + j) % 2 != 0)
 				{
-					board_ctx.globalAlpha = 0.6;
-					board_ctx.fillStyle = board_yellowcolor;
 					board_ctx.fillRect(i*board_width/8 + board_offx, j*board_height/8 + board_offy, board_width/8, board_height/8);
-					board_ctx.globalAlpha = 1;
 				}
 			}
+		}
+		if (this.move_from_x != -1 &&
+			this.move_from_y != -1)
+		{
+			var i = board.flip_x(this.move_from_x);
+			var j = board.flip_y(this.move_from_y);
+			board_ctx.globalAlpha = 0.6;
+			board_ctx.fillStyle = board_yellowcolor;
+			board_ctx.fillRect(i*board_width/8 + board_offx, j*board_height/8 + board_offy, board_width/8, board_height/8);
+			board_ctx.globalAlpha = 1;
 		}
 		const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
 		const ranks = ["1", "2", "3", "4", "5", "6", "7", "8"];
@@ -645,28 +676,47 @@ class Board
 	
 	draw_pieces()
 	{
-		for (var i = 7; i >= 0 ; i--)
+		if (this.facing_side == SIDE_WHITE)
 		{
-			for (const p of this.pieces)
+			for (var i = 7; i >= 0 ; i--)
 			{
-				if (i == p.y)
+				for (const p of this.pieces)
 				{
-					p.draw(this);
+					if (i == p.y)
+					{
+						p.draw(this);
+					}
+				}
+			}
+		} else {
+			for (var i = 0; i < 8; i++)
+			{
+				for (const p of this.pieces)
+				{
+					if (i == p.y)
+					{
+						p.draw(this);
+					}
 				}
 			}
 		}
+		board_ctx.globalAlpha = 0.4;
 		for (const p of this.pieces)
 		{
 			p.draw_lifted(this);
 		}
+		board_ctx.globalAlpha = 1;
 	}
 
 	draw_legalmoves()
 	{
+		board_ctx.globalAlpha = 0.4;
+		board_ctx.fillStyle = "black";
 		for (const p of this.pieces)
 		{
 			p.draw_legal(this);
 		}
+		board_ctx.globalAlpha = 1;
 	}
 
 	draw_promotion()
@@ -759,6 +809,7 @@ class Board
 		{
 			this.draw_promotion();
 		}
+		this.something_changed = false;
 	}
 }
 
@@ -791,6 +842,7 @@ function canvas_on_mouse_down(e)
 	//console.log(mouse_x + " " + mouse_y);
 	if (board.grab_piece(mouse_x, mouse_y))
 	{
+		board.something_changed = true;
 		if (e.type == "mousedown")
 		{
 			e.preventDefault();
@@ -802,6 +854,7 @@ function canvas_on_mouse_move(e)
 {
 	const rect = board_canvas.getBoundingClientRect();
 	//console.log(e);
+	board.something_changed = true;
 	if (e.type == "touchmove")
 	{
 		mouse_x = e.changedTouches[0].clientX - rect.left;
@@ -826,6 +879,7 @@ function canvas_on_mouse_up(e)
 	}
 	mouse_button = false;
 	board.unlift_all();
+	board.something_changed = true;
 }
 
 function switchmenu()
@@ -835,7 +889,7 @@ function switchmenu()
 		return;
 	}
 	lastmenu = menu;
-	if (menu == MENU_GAMING)
+	if (menu == MENU_GAMING && gametype != GAMETYPE_SPEC)
 	{
 		board.enable_board = true;
 	}
@@ -851,6 +905,7 @@ function switchmenu()
 	d_working.hidden = true;
 	d_waitopponent.hidden = true;
 	d_settings.hidden = true;
+	d_chat.hidden = true;
 	switch (menu)
 	{
 	case MENU_GAMING:
@@ -875,7 +930,6 @@ function switchmenu()
 
 	case MENU_JOINOPTIONS:
 		d_joinoptions.hidden = false;
-		btn_join.disabled = !check_id(in_code.value);
 		break;
 
 	case MENU_WORKING:
@@ -889,20 +943,36 @@ function switchmenu()
 	case MENU_SETTINGS:
 		d_settings.hidden = false;
 		break;
+		
+	case MENU_CHAT:
+		d_chat.hidden = false;
+		break;
 	}
 }
 
 function draw()
 {
-	scale_canvas();
 	switchmenu();
 	board_ctx.clearRect(0, 0, board_canvas.width, board_canvas.height);
 	board.draw();
-	board.logic.heartbeat();
-
 	mouse_button = false;
+}
 
-	window.requestAnimationFrame(draw);
+function heartbeat()
+{
+	scale_canvas();
+	var whitetimebefore = Math.floor(board.logic.whitetime_ms / 1000);
+	var blacktimebefore = Math.floor(board.logic.blacktime_ms / 1000);
+	board.logic.heartbeat();
+	if (Math.floor(board.logic.whitetime_ms / 1000) != whitetimebefore ||
+		Math.floor(board.logic.blacktime_ms / 1000) != blacktimebefore)
+	{
+		board.something_changed = true;
+	}
+	if (board.something_changed)
+	{
+		window.requestAnimationFrame(draw);
+	}
 }
 
 function button_playlocal()
@@ -928,11 +998,30 @@ function button_join()
 function button_back()
 {
 	menu = MENU_MAINMENU;
+	hidegifs();
+	board.reset();
+	board.disabled_side = -1;
+	in_code.value = "";
+	if (peer_host)
+	{
+		peer_host.destroy();
+		peer_host = null;
+	}
+	peer_self_id = "";
+	peer_client_connection = null;
+	peer_connections = new Array();
+	hidechat();
+	button_clearchat();
 }
 
 function button_settings()
 {
 	menu = MENU_SETTINGS;
+}
+
+function button_chat()
+{
+	menu = MENU_CHAT;
 }
 
 function button_notsettings()
@@ -952,6 +1041,8 @@ function button_switch3d()
 		ideal_board_offy = 100;
 		ideal_board_borderwidth = 61*s;
 		ideal_board_borderheight = 38*s;
+		board_timer_up_offset = -5;
+		board_timer_down_offset = 20;
 	}
 	else
 	{
@@ -960,10 +1051,17 @@ function button_switch3d()
 		ideal_board_height = 512;
 		ideal_board_offx = 50;
 		ideal_board_offy = 100;
-		board_borderwidth = 20;
-		board_borderheight = 20;
+		ideal_board_borderwidth = 20;
+		ideal_board_borderheight = 20;
+		board_timer_up_offset = 0;
+		board_timer_down_offset = 0;
 	}
 	last_win_width = 0;
+}
+
+function button_flipboard()
+{
+	board.flip();
 }
 
 function button_go_local()
@@ -972,6 +1070,7 @@ function button_go_local()
 	board.logic.timecontrol_initialms = parse_time(in_local_time_inital.value);
 	board.logic.timecontrol_addms = parse_time(in_local_time_increment.value);
 	board.reset();
+	gametype = GAMETYPE_LOCAL;
 }
 
 function button_go_bot()
@@ -982,7 +1081,7 @@ function button_go_bot()
 		board.logic.timecontrol_initialms = parse_time(in_bot_time_inital.value);
 		board.logic.timecontrol_addms = parse_time(in_bot_time_increment.value);
 		board.reset();
-		board.facing_side = SIDE_WHITE;
+		board.facing_side = in_bot_white.checked ? SIDE_WHITE : SIDE_BLACK;
 		board.disabled_side = 1-board.facing_side;
 	}
 	else
@@ -1010,17 +1109,16 @@ function button_go_host()
 		{
 			conn.on("open", (id) => 
 			{
-				var side = SIDE_WHITE;
+				var side = in_host_white.checked ? SIDE_WHITE : SIDE_BLACK;
 				menu = MENU_GAMING;
 				gametype = GAMETYPE_HOST;
 				peer_connections.push(conn);
 				if (peer_connections.length == 1)
 				{
-					console.log("SENDING CONNECT");
 					board.reset();
 					board.facing_side = side;
 					board.disabled_side = 1-side;
-					conn.on("data", (data) =>
+					peer_connections[0].on("data", (data) =>
 					{
 						console.log("server got data " + data);
 						const words = data.split(" ");
@@ -1034,21 +1132,57 @@ function button_go_host()
 							board.logic.promotion_choice = Number(words[5]);
 							board.logic.move_piece(board.move_from_x, board.move_from_y, board.move_to_x, board.move_to_y);
 							board.update_board();
+							for (var j = 1; j < peer_connections.length; j++)
+							{
+								peer_connections[j].send(data + " " + board.logic.whitetime_ms + " " + board.logic.blacktime_ms);
+							}
+						}
+						else if (words[0] == "message")
+						{
+							const words = data.split(" ");
+							const m = "Guest> " + words.slice(1).join(" ");
+							post_chat(m);
+							for (var j = 1; j < peer_connections.length; j++)
+							{
+								peer_connections[j].send("message " + m);
+							}
 						}
 					});
-					conn.on("error", (error) =>
+					peer_connections[0].on("error", (error) =>
 					{
-						console.log("ERROR" + error);
+						button_back();
 					});
-					conn.on("close", () =>
+					peer_connections[0].on("close", () =>
 					{
-						console.log("CLOSE");
+						button_back();
 					});
-					conn.send("connect " + (1-side) + " " + GAMETYPE_JOIN + " " + board.logic.timecontrol_initialms + " " + board.logic.timecontrol_addms);
+					peer_connections[0].send("connect " + (1-side) + " " + GAMETYPE_JOIN + " " + board.logic.timecontrol_initialms + " " + board.logic.timecontrol_addms);
+					showchat();
 				}
 				else
 				{
-					conn.send("connect " + side + " " + GAMETYPE_JOIN + " " + board.logic.timecontrol_initialms + " " + board.logic.timecontrol_addms);
+					peer_connections[peer_connections.length-1].send("connect " + side + " " + GAMETYPE_SPEC + " " + board.logic.timecontrol_initialms + " " + board.logic.timecontrol_addms);
+					peer_connections[peer_connections.length-1].on("data", function(i) { return function (data)
+					{
+						const words = data.split(" ");
+						if (words[0] == "message")
+						{
+							var spec = "";
+							if (peer_connections.length != 2)
+							{
+								spec = " " + i;
+							}
+							const m = "Spectator" + spec + "> " + words.slice(1).join(" ");
+							post_chat(m);
+							for (var j = 0; j < peer_connections.length; j++)
+							{
+								if (j != i)
+								{
+									peer_connections[j].send("message " + m);
+								}
+							}
+						}
+					}}(peer_connections.length-1));
 				}
 			});
 		});
@@ -1057,6 +1191,10 @@ function button_go_host()
 
 function button_go_join()
 {
+	if (!check_id(in_code.value))
+	{
+		return;
+	}
 	menu = MENU_WORKING;
 	board.reset();
 	peer_connections = new Array();
@@ -1082,7 +1220,9 @@ function button_go_join()
 					board.facing_side = side;
 					board.disabled_side = 1-side;
 					menu = MENU_GAMING;
-					gametype = GAMETYPE_JOIN;
+					gametype = Number(words[2]);
+					console.log("GOT GAMETYPE " + words[2]);
+					showchat();
 				}
 				else if (words[0] == "move")
 				{
@@ -1096,35 +1236,69 @@ function button_go_join()
 					board.logic.move_piece(board.move_from_x, board.move_from_y, board.move_to_x, board.move_to_y);
 					board.update_board();
 				}
+				else if (words[0] == "message")
+				{
+					post_chat(words.slice(1).join(" "));
+				}
 			});
 		});
 		peer_client_connection.on("close", () =>
 		{
-			console.log("CLOSE");
-			menu = MENU_MAINMENU;
-			in_code.value = "";
+			button_back();
 		});
 		peer_client_connection.on("error", (error) =>
 		{
-			console.log("CLOSE " + error);
-			menu = MENU_MAINMENU;
-			in_code.value = "";
+			button_back();
 		});
 	});
 	peer_host.on("disconnected", () =>
 	{
-		console.log("DISCONNECT");
-		menu = MENU_MAINMENU;
-		in_code.value = "";
+		button_back();
 	});
 	peer_host.on("error", (err) =>
 	{
-		console.log("ERROR " + err);
-		menu = MENU_MAINMENU;
-		in_code.value = "";
+		button_back();
 	});
 }
 
+function button_chat()
+{
+	menu = MENU_CHAT;
+}
+
+function button_clearchat()
+{
+	d_scrollbox.innerHTML = "";
+}
+
+function button_say()
+{
+	if (in_chat.value == "")
+	{
+		return;
+	}
+	post_chat("You> " + in_chat.value);
+	if ((gametype == GAMETYPE_JOIN || gametype == GAMETYPE_SPEC) && peer_client_connection)
+	{
+		peer_client_connection.send("message " + in_chat.value);
+	}
+	if ((gametype == GAMETYPE_HOST) && peer_connections.length > 0 && peer_connections[0])
+	{
+		for (var i = 0; i < peer_connections.length; i++)
+		{
+			peer_connections[i].send("message Host>" + in_chat.value);
+		}
+	}
+	in_chat.value = "";
+}
+
+function post_chat(message)
+{
+	const p = document.createElement("p");
+	p.innerHTML = message;
+	p.classList.add("p_chatmessage");
+	d_scrollbox.insertBefore(p, d_scrollbox.firstChild);
+}
 
 function load_image(name, src)
 {
@@ -1135,7 +1309,7 @@ function load_image(name, src)
 		loaded_images++;
 		if (loaded_images == loading_images)
 		{
-			window.requestAnimationFrame(draw);
+			setInterval(heartbeat, 8);
 		}
 	};
 	images[name].imagesource = src;
@@ -1150,14 +1324,21 @@ function stockfish_message(message)
 		board.logic.timecontrol_initialms = parse_time(in_bot_time_inital.value);
 		board.logic.timecontrol_addms = parse_time(in_bot_time_increment.value);
 		board.reset();
-		board.facing_side = SIDE_WHITE;
+		board.facing_side = in_bot_white.checked ? SIDE_WHITE : SIDE_BLACK;
 		board.disabled_side = 1-board.facing_side;
+		board.something_changed = true;
+		if (board.disabled_side == SIDE_WHITE)
+		{
+			stockfish.postMessage("position fen \"" + board.logic.get_fen() + "\"");
+			stockfish.postMessage("go");
+		}
 	}
 	if (message.data.startsWith("bestmove"))
 	{
-		console.log("SADHDASGYDSAG");
-		[board.move_from_x, board.move_from_y, board.move_to_x, board.move_to_y] = decode_coordinates(message.data.split(" ")[1]);
-		board.complete_move();
+		setTimeout(function(coords) { return function() {
+			[board.move_from_x, board.move_from_y, board.move_to_x, board.move_to_y] = decode_coordinates(coords);
+			board.complete_move();
+		}}(message.data.split(" ")[1]), 3000);
 	}
 }
 
@@ -1179,33 +1360,6 @@ function init_images()
 	}
 }
 
-function init_debug()
-{
-	var b_flipboard = document.createElement("button");
-	b_flipboard.innerHTML = "Flip board";
-	b_flipboard.onclick = function()
-	{
-		if (board)
-		{
-			board.flip();
-		}
-	};
-	var b_resetboard = document.createElement("button");
-	b_resetboard.innerHTML = "Reset board";
-	b_resetboard.onclick = function()
-	{
-		if (board)
-		{
-			board.reset();
-			board.reset_stockfish();
-		}
-	};
-	//document.getElementById("rightcol").appendChild(b_flipboard);
-	//document.getElementById("rightcol").appendChild(document.createElement("br"));
-	//document.getElementById("rightcol").appendChild(b_resetboard);
-	//document.getElementById("rightcol").appendChild(document.createElement("br"));
-}
-
 function init_stockfish()
 {
 	stockfish = new Worker("stockfish.js");
@@ -1222,6 +1376,7 @@ function scale_canvas()
 	if (cw != last_win_width ||
 		ch != last_win_height)
 	{
+		board.something_changed = true;
 		last_win_width = cw;
 		last_win_height = ch;
 
@@ -1265,13 +1420,7 @@ function init()
 	board_ctx = board_canvas.getContext("2d");
 	board = new Board();
 	board.reset();
-	if (DEBUG)
-	{
-		init_debug();
-	}
 	init_images();
-	//init_stockfish();
-	board.reset_stockfish();
 	const id = window.location.search.substring(1);
 	if (window.location.search != "" && check_id(id))
 	{
@@ -1279,6 +1428,47 @@ function init()
 		in_code.value = id;
 		button_go_join();
 	}
+}
+
+function whitewongif()
+{
+	document.getElementById("whitewon").removeAttribute("hidden");
+	setTimeout(function() {
+		document.getElementById("whitewon").setAttribute("hidden", "");
+	}, 3000); 
+}
+
+function blackwongif()
+{
+	document.getElementById("blackwon").removeAttribute("hidden");
+	setTimeout(function() {
+		document.getElementById("blackwon").setAttribute("hidden", "");
+	}, 3000); 
+}
+
+function drawgif()
+{
+	document.getElementById("draw").removeAttribute("hidden");
+	setTimeout(function() {
+		document.getElementById("draw").setAttribute("hidden", "");
+	}, 3000); 
+}
+
+function hidegifs()
+{
+	document.getElementById("whitewon").setAttribute("hidden", "");
+	document.getElementById("blackwon").setAttribute("hidden", "");
+	document.getElementById("draw").setAttribute("hidden", "");
+}
+
+function showchat()
+{
+	btn_chat.hidden = false;
+}
+
+function hidechat()
+{
+	btn_chat.hidden = true;
 }
 
 init();

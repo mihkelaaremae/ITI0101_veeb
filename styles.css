@@ -31,7 +31,6 @@ button {
 	border-radius: 4px;
 	cursor: pointer;
 	transition: all 0.2s ease-in-out;
-	display: block;
 	margin: auto;
 }
 
@@ -133,4 +132,125 @@ p, h1 {
 #d_canvas {
 	z-index: 3;
 	background: linear-gradient(180deg, rgba(2,0,36,1) 0%, rgba(36,23,0,1) 100%);
+}
+
+.gif_overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+label {
+	margin: auto;
+	width: max-content;
+	text-transform: uppercase;
+	color: #fff;
+	font-size: 18px;
+	font-weight: bold;
+	font-family: sans-serif;
+	transition: all 0.2s ease-in-out;
+	padding: 10px;
+	/*background-color: #4CAF50;*/
+}
+
+.container {
+	display: block;
+	position: relative;
+	padding-left: 50px;
+	margin-bottom: 12px;
+	cursor: pointer;
+	font-size: 22px;
+	font-family: sans-serif;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	transition: all 0.2s ease-in-out;
+	border-radius: 4px;
+}
+
+.container input {
+	position: absolute;
+	opacity: 0;
+	cursor: pointer;
+	height: 0;
+	width: 0;
+	transition: all 0.2s ease-in-out;
+}
+
+.checkmark {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 25px;
+	width: 25px;
+	margin: 10px;
+	background-color: #eee;
+	transition: all 0.2s ease-in-out;
+	border-radius: 4px;
+}
+
+.container:hover input ~ .checkmark {
+	background-color: #ccc;
+}
+
+.container input:checked ~ .checkmark {
+	background-color: #4CAF50;
+}
+
+.checkmark:after {
+	content: "";
+	position: absolute;
+	display: none;
+}
+
+.container input:checked ~ .checkmark:after {
+	display: block;
+}
+
+.container .checkmark:after {
+	left: 9px;
+	top: 5px;
+	width: 5px;
+	height: 10px;
+	border: solid white;
+	border-width: 0 3px 3px 0;
+	-webkit-transform: rotate(45deg);
+	-ms-transform: rotate(45deg);
+	transform: rotate(45deg);
+}
+
+#d_scrollbox {
+	width: 100%;
+	height: auto;
+	overflow: auto;
+	padding: 10px;
+	font-size: 16px;
+	border-radius: 4px;
+	border: 1px solid #ccc;
+	background: black;
+	color: white;
+	grid-column:1/span 4;
+	grid-row: 2/span 1000;
+	margin:10px;
+}
+
+#d_chatgrid {
+	position: absolute;
+    display: grid;
+    align-content: stretch;
+    height: 100%;
+    width: 100%;
+    left: 0px;
+    top: 0px;
+    justify-content: center;
+}
+
+.p_chatmessage {
+	text-align: left;
+	margin: 0px;
 }
